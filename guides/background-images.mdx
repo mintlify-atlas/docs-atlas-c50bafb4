@@ -1,0 +1,371 @@
+---
+title: Background Images
+description: How to use SanityImage for background images with absolute positioning
+---
+
+While CSS background images are common, using an `<img>` element with absolute positioning offers several advantages: better accessibility, lazy loading support, and the ability to use `srcSet` for responsive images. Here's how to use `SanityImage` for background images.
+
+## Basic Pattern
+
+The key is to use `position: relative` on the container and `position: absolute` on the image:
+
+```jsx
+<section
+  css={{
+    position: "relative",
+    paddingBlock: 100,
+  }}
+>
+  <SanityImage
+    id="..."
+    baseUrl="..."
+    width={1440}
+    css={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      userSelect: "none",
+      zIndex: 1,
+    }}
+    alt=""
+  />
+
+  <div css={{ position: "relative", zIndex: 2 }}>
+    <h1>Your big hero copy</h1>
+    <LinkButton to="/signup/">Get started</LinkButton>
+  </div>
+</section>
+```
+
+## How It Works
+
+1. **Container** (`<section>`) is set to `position: relative` and sized by its content
+2. **Image** is positioned absolutely to fill the entire container
+3. **Content** (`<div>`) has a higher `z-index` to appear above the image
+4. **`objectFit: cover`** ensures the image fills the container while maintaining aspect ratio
+5. **`userSelect: none`** prevents the image from being selected when dragging
+
+## Hero Section Example
+
+Here's a complete hero section with a background image:
+
+```tsx
+<section
+  css={{
+    position: "relative",
+    minHeight: "600px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  }}
+>
+  <SanityImage
+    id={hero.backgroundImage._id}
+    baseUrl="https://cdn.sanity.io/images/project/dataset/"
+    width={1920}
+    height={1080}
+    mode="cover"
+    hotspot={hero.backgroundImage.hotspot}
+    crop={hero.backgroundImage.crop}
+    loading="eager"
+    css={{
+      position: "absolute",
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      zIndex: 1,
+    }}
+    alt=""
+  />
+
+  {/* Optional overlay */}
+  <div
+    css={{
+      position: "absolute",
+      inset: 0,
+      background: "rgba(0, 0, 0, 0.4)",
+      zIndex: 2,
+    }}
+  />
+
+  <div
+    css={{
+      position: "relative",
+      zIndex: 3,
+      textAlign: "center",
+      color: "white",
+      maxWidth: "800px",
+      padding: "0 20px",
+    }}
+  >
+    <h1>Welcome to Our Product</h1>
+    <p>Build amazing things with our platform</p>
+    <button>Get Started</button>
+  </div>
+</section>
+```
+
+## Mode Selection for Backgrounds
+
+You have two choices for how the background image behaves:
+
+### Using `mode="contain"` with `objectFit: "cover"`
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={1440}
+  // mode="contain" (default) - preserve original aspect ratio from Sanity
+  css={{
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover", // Browser crops to fill container
+  }}
+  alt=""
+/>
+```
+
+This approach:
+- Sanity delivers the image at original aspect ratio
+- Browser crops it to fill the container using `objectFit: cover`
+- Good when you don't know the exact container dimensions
+
+### Using `mode="cover"` with Specific Dimensions
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={1440}
+  height={800}
+  mode="cover" // Sanity crops to exact aspect ratio
+  hotspot={image.hotspot}
+  css={{
+    position: "absolute",
+    inset: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+  }}
+  alt=""
+/>
+```
+
+This approach:
+- Sanity crops the image to your specified aspect ratio (16:9 in this example)
+- Uses hotspot data for smart cropping
+- Prevents portrait images from being delivered for landscape containers
+- More efficient - delivers exactly what you need
+
+<Tip>
+  If you know the approximate aspect ratio of your background container, use `mode="cover"` with both width and height for better results.
+</Tip>
+
+## Adding a Gradient Overlay
+
+Combine the image with a gradient for better text readability:
+
+```tsx
+<section css={{ position: "relative", minHeight: "500px" }}>
+  <SanityImage
+    id={image._id}
+    baseUrl="..."
+    width={1920}
+    css={{
+      position: "absolute",
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      zIndex: 1,
+    }}
+    alt=""
+  />
+
+  <div
+    css={{
+      position: "absolute",
+      inset: 0,
+      background: "linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.7))",
+      zIndex: 2,
+    }}
+  />
+
+  <div css={{ position: "relative", zIndex: 3 }}>
+    {/* Your content */}
+  </div>
+</section>
+```
+
+## Parallax Effect
+
+Create a parallax scrolling effect with a background image:
+
+```tsx
+import { useEffect, useState } from 'react'
+
+function ParallaxHero({ image }) {
+  const [offset, setOffset] = useState(0)
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setOffset(window.pageYOffset)
+    }
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  return (
+    <section css={{ position: "relative", height: "600px", overflow: "hidden" }}>
+      <SanityImage
+        id={image._id}
+        baseUrl="..."
+        width={1920}
+        css={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          width: "100%",
+          height: "120%",
+          objectFit: "cover",
+          transform: `translateY(${offset * 0.5}px)`,
+          zIndex: 1,
+        }}
+        alt=""
+      />
+      <div css={{ position: "relative", zIndex: 2 }}>
+        {/* Content */}
+      </div>
+    </section>
+  )
+}
+```
+
+## Accessibility Considerations
+
+### Empty Alt Text
+
+Background images are decorative, so use empty `alt=""` (not omitting the attribute):
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={1440}
+  alt="" // Empty string for decorative images
+/>
+```
+
+### Text Contrast
+
+Ensure text has sufficient contrast against the background image:
+
+```tsx
+<div
+  css={{
+    position: "relative",
+    zIndex: 3,
+    color: "white",
+    textShadow: "0 2px 4px rgba(0,0,0,0.8)", // Improve readability
+  }}
+>
+  <h1>Readable Text</h1>
+</div>
+```
+
+## Performance Tips
+
+### Use `loading="eager"` for Above-the-Fold Images
+
+```tsx
+<SanityImage
+  id={hero._id}
+  baseUrl="..."
+  width={1920}
+  loading="eager" // Don't lazy load hero images
+  css={{ /* ... */ }}
+  alt=""
+/>
+```
+
+### Optimize Image Size
+
+Don't request images larger than needed:
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={1920} // Match your max viewport width
+  sizes="100vw" // Full viewport width
+  queryParams={{ q: 80 }} // Reduce quality slightly for backgrounds
+  alt=""
+/>
+```
+
+## Card with Background Image
+
+Create cards with background images:
+
+```tsx
+<article
+  css={{
+    position: "relative",
+    height: "400px",
+    borderRadius: "12px",
+    overflow: "hidden",
+  }}
+>
+  <SanityImage
+    id={card.image._id}
+    baseUrl="..."
+    width={600}
+    height={400}
+    mode="cover"
+    hotspot={card.image.hotspot}
+    css={{
+      position: "absolute",
+      inset: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      zIndex: 1,
+    }}
+    alt=""
+  />
+
+  <div
+    css={{
+      position: "absolute",
+      bottom: 0,
+      left: 0,
+      right: 0,
+      padding: "20px",
+      background: "linear-gradient(to top, rgba(0,0,0,0.9), transparent)",
+      zIndex: 2,
+    }}
+  >
+    <h3 css={{ color: "white" }}>{card.title}</h3>
+    <p css={{ color: "rgba(255,255,255,0.9)" }}>{card.description}</p>
+  </div>
+</article>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Image Styling" icon="paintbrush" href="/guides/styling">
+    More CSS patterns and responsive techniques
+  </Card>
+  <Card title="Cover vs Contain" icon="crop" href="/guides/modes">
+    Understand image modes in depth
+  </Card>
+</CardGroup>

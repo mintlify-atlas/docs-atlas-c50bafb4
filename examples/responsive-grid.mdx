@@ -1,0 +1,79 @@
+---
+title: Responsive Grid
+description: Create responsive image grids with proper sizing and srcSet
+---
+
+# Responsive Grid Example
+
+Learn how to use sanity-image in responsive layouts with proper sizing attributes.
+
+## 3-Column Grid Layout
+
+This example shows a 3-column grid that fills the viewport until it reaches a maximum of 1,200px wide. Each column is 390px at most on desktop:
+
+```jsx
+<div
+  css={{
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 15,
+    maxWidth: 1240,
+    paddingInline: 20,
+    marginInline: "auto",
+  }}
+>
+  {["image-a", "image-b", "image-c"].map((imageId) => (
+    <div key={imageId}>
+      <SanityImage
+        id={imageId}
+        baseUrl="..."
+        width={390}
+        sizes="(min-width: 1240px) 390px, calc((100vw - 40px - 30px) / 3)"
+      />
+    </div>
+  ))}
+</div>
+```
+
+## Fixed Height Grid with Cover Mode
+
+If you need images to match in height, use `cover` mode. This produces images with a 3:2 aspect ratio that fill the column width:
+
+```jsx
+<SanityImage
+  id={imageId}
+  baseUrl="..."
+  width={390}
+  height={260}
+  mode="cover"
+  sizes="(min-width: 1240px) 390px, calc((100vw - 40px - 30px) / 3)"
+/>
+```
+
+<Note>
+Without a `hotspot` value, the image will be cropped based on what Sanity thinks is the most interesting part using `crop=entropy`. Pass a `hotspot` value to override this behavior.
+</Note>
+
+## Understanding the `sizes` Attribute
+
+The `sizes` attribute tells the browser how big the image will be at different viewport sizes:
+
+- `(min-width: 1240px) 390px` - At viewports 1240px and wider, the image is 390px
+- `calc((100vw - 40px - 30px) / 3)` - Below 1240px, calculate one-third of the viewport width minus padding (40px) and gaps (30px)
+
+This ensures the browser downloads the appropriately-sized image from the srcSet.
+
+## Base Image Styles
+
+For responsive images to work properly, use these base CSS styles:
+
+```css
+img {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+}
+```
+
+These styles ensure images act as block-level elements that scale with their container while maintaining aspect ratio.

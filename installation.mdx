@@ -1,0 +1,90 @@
+---
+title: Installation
+description: Install Sanity Image in your React project
+---
+
+## Install the Package
+
+Add Sanity Image to your project using your preferred package manager:
+
+<CodeGroup>
+
+```bash npm
+npm install sanity-image
+```
+
+```bash yarn
+yarn add sanity-image
+```
+
+```bash pnpm
+pnpm add sanity-image
+```
+
+</CodeGroup>
+
+## Requirements
+
+Sanity Image has minimal requirements to keep your bundle size small:
+
+### Peer Dependencies
+
+You need React 18 or higher installed in your project:
+
+```json
+{
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
+  }
+}
+```
+
+<Note>
+  Sanity Image has **zero dependencies** beyond React. The entire package is just 4kb (2kb gzipped).
+</Note>
+
+### TypeScript Support
+
+Sanity Image includes full TypeScript definitions out of the box. No additional `@types` packages are needed.
+
+If you're using TypeScript, the component provides:
+
+- Full type safety for all props
+- Polymorphic component types (when using the `as` prop)
+- Exported utility types like `WrapperProps` for creating wrapper components
+- Type definitions for all utility functions
+
+<Tip>
+  The package exports CommonJS and ESM modules, so it works with any modern build tool including Vite, Webpack, Rollup, and more.
+</Tip>
+
+## Framework Compatibility
+
+Sanity Image works with any React-based framework:
+
+- **Next.js** — Works in both App Router and Pages Router
+- **Gatsby** — Full compatibility with Gatsby's build process
+- **Remix** — Works in both client and server components
+- **Create React App** — Drop-in compatibility
+- **Vite** — Full support for Vite-based projects
+- **Any React framework** — If it runs React, it works
+
+<Note>
+  The package is marked as having no side effects (`"sideEffects": false`), which enables optimal tree-shaking in modern bundlers.
+</Note>
+
+## Verify Installation
+
+Confirm the package is installed correctly:
+
+```bash
+npm list sanity-image
+```
+
+You should see the installed version in the output.
+
+## Next Steps
+
+<Card title="Quick Start Guide" icon="rocket" href="/quickstart">
+  Learn how to render your first optimized image with Sanity Image
+</Card>

@@ -1,0 +1,73 @@
+---
+title: Introduction
+description: A well-considered React component for displaying optimized images from Sanity.io
+---
+
+## Welcome to Sanity Image
+
+Sanity Image is a powerful React component that makes it easy to display optimized, responsive images from Sanity.io. It handles all the complexity of image optimization, lazy loading, and responsive design so you can focus on building your application.
+
+<CardGroup cols={2}>
+  <Card title="Installation" icon="download" href="/installation">
+    Get started by installing Sanity Image in your project
+  </Card>
+  <Card title="Quick Start" icon="rocket" href="/quickstart">
+    Learn how to render your first optimized image
+  </Card>
+  <Card title="Modes Guide" icon="crop" href="/guides/modes">
+    Understand cover vs contain modes for image display
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/sanity-image">
+    Explore all available props and options
+  </Card>
+</CardGroup>
+
+## Key Features
+
+Sanity Image provides everything you need for production-ready image handling:
+
+- **Automatic srcSet generation** — Dynamic multipliers based on image size for optimal loading
+- **Native lazy loading** — Low-quality image previews without build-time penalties
+- **Layout shift prevention** — Automatic width and height attributes set correctly
+- **Sanity integration** — Full support for crop and hotspot data from Sanity Studio
+- **Polymorphic component** — Complete TypeScript support with `as` prop for custom rendering
+- **Tiny bundle size** — Just 4kb (2kb gzipped) with zero dependencies
+
+## What It Does
+
+At its core, Sanity Image takes a Sanity image ID and renders an optimized `<img>` tag with:
+
+- **Smart srcSet generation** — Automatically creates multiple image sizes based on your specified dimensions
+- **Format optimization** — Uses modern formats like AVIF when supported by the browser
+- **Intelligent cropping** — Respects hotspot data or uses entropy-based cropping for the most interesting part of images
+- **Zero layout shift** — Calculates exact dimensions and sets width/height attributes
+- **Simple styling** — Outputs a single `<img>` tag with no nested DOM structure
+
+<Note>
+  Sanity Image works with any React-based framework including Next.js, Gatsby, Remix, and more.
+</Note>
+
+## How It Works
+
+The component intelligently handles image optimization:
+
+1. **Parses the image ID** to determine source dimensions and format
+2. **Generates optimized URLs** with appropriate transformations
+3. **Creates a responsive srcSet** with multiple sizes for different screen densities
+4. **Applies crop and hotspot data** from Sanity Studio
+5. **Sets dimension attributes** to prevent layout shifts during loading
+
+<Tip>
+  Create a wrapper component in your app to set the `baseUrl` once and reuse it everywhere. See the [Wrapper Component guide](/guides/wrapper-component) for details.
+</Tip>
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Install the package" icon="terminal" href="/installation">
+    Add Sanity Image to your project with npm, yarn, or pnpm
+  </Card>
+  <Card title="Follow the quickstart" icon="play" href="/quickstart">
+    Render your first image in minutes
+  </Card>
+</CardGroup>

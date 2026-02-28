@@ -1,0 +1,476 @@
+---
+title: GROQ Queries for Images
+description: How to fetch image data from Sanity including hotspot, crop, and preview data
+---
+
+When fetching images from Sanity using GROQ, you need to include specific fields to take full advantage of `SanityImage` features. This guide shows you how to structure your queries to get hotspot, crop, and low-quality image preview (LQIP) data.
+
+## Basic Image Query
+
+The minimal query to use `SanityImage`:
+
+```groq
+*[_type == "post"][0] {
+  title,
+  mainImage {
+    "id": asset._ref
+  }
+}
+```
+
+This gives you the image ID, which is all that's required:
+
+```tsx
+<SanityImage
+  id={post.mainImage.id}
+  baseUrl="..."
+  width={800}
+  alt={post.title}
+/>
+```
+
+## Recommended Full Query
+
+For the best experience, include hotspot, crop, and preview data:
+
+```groq
+*[_type == "post"][0] {
+  title,
+  mainImage {
+    "id": asset._ref,
+    "preview": asset->metadata.lqip,
+    hotspot { x, y },
+    crop {
+      bottom,
+      left,
+      right,
+      top,
+    }
+  }
+}
+```
+
+Now you can use all of `SanityImage`'s features:
+
+```tsx
+<SanityImage
+  id={post.mainImage.id}
+  baseUrl="..."
+  width={800}
+  height={600}
+  mode="cover"
+  hotspot={post.mainImage.hotspot}
+  crop={post.mainImage.crop}
+  preview={post.mainImage.preview}
+  alt={post.title}
+/>
+```
+
+## Understanding Image Fields
+
+### The `asset._ref` Field
+
+This is the Sanity Image ID, which looks like:
+
+```
+image-abc123def456-1200x800-jpg
+```
+
+The ID contains:
+- Image hash: `abc123def456`
+- Dimensions: `1200x800`
+- Format: `jpg`
+
+`SanityImage` parses this to determine the original image dimensions and format.
+
+### Hotspot Data
+
+Hotspot defines the focal point of the image:
+
+```typescript
+type Hotspot = {
+  x: number // 0 to 1, left to right
+  y: number // 0 to 1, top to bottom
+}
+```
+
+Example:
+```json
+{
+  "x": 0.5,  // Center horizontally
+  "y": 0.3   // 30% from the top
+}
+```
+
+When using `mode="cover"`, the hotspot ensures the focal point stays visible when cropping.
+
+<Note>
+  The hotspot `width` and `height` fields are not used by `SanityImage` and can be omitted from your query.
+</Note>
+
+### Crop Data
+
+Crop defines the visible portion of the image:
+
+```typescript
+type Crop = {
+  top: number    // 0 to 1
+  bottom: number // 0 to 1
+  left: number   // 0 to 1
+  right: number  // 0 to 1
+}
+```
+
+Example:
+```json
+{
+  "top": 0.1,     // Crop 10% from top
+  "bottom": 0.05, // Crop 5% from bottom
+  "left": 0,      // No left crop
+  "right": 0      // No right crop
+}
+```
+
+### Preview (LQIP) Data
+
+The low-quality image preview is a base64-encoded tiny image:
+
+```
+data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAA...
+```
+
+Sanity generates this automatically. It's used for the blur-up effect while the full image loads.
+
+## Query Patterns
+
+### Multiple Images
+
+Query all images in a document:
+
+```groq
+*[_type == "gallery"][0] {
+  title,
+  images[] {
+    "id": asset._ref,
+    "preview": asset->metadata.lqip,
+    hotspot { x, y },
+    crop { bottom, left, right, top },
+    alt
+  }
+}
+```
+
+Usage:
+
+```tsx
+{gallery.images.map((image) => (
+  <SanityImage
+    key={image.id}
+    id={image.id}
+    baseUrl="..."
+    width={400}
+    hotspot={image.hotspot}
+    crop={image.crop}
+    preview={image.preview}
+    alt={image.alt}
+  />
+))}
+```
+
+### Nested Images
+
+Query images in nested objects:
+
+```groq
+*[_type == "page"][0] {
+  title,
+  sections[] {
+    _type,
+    _type == "hero" => {
+      heading,
+      backgroundImage {
+        "id": asset._ref,
+        "preview": asset->metadata.lqip,
+        hotspot { x, y },
+        crop { bottom, left, right, top }
+      }
+    }
+  }
+}
+```
+
+### Referenced Images
+
+Query images from referenced documents:
+
+```groq
+*[_type == "post"][0] {
+  title,
+  author-> {
+    name,
+    avatar {
+      "id": asset._ref,
+      "preview": asset->metadata.lqip,
+      hotspot { x, y },
+      crop { bottom, left, right, top }
+    }
+  }
+}
+```
+
+## Creating a Reusable Fragment
+
+Define a constant for the image fields:
+
+```typescript
+// lib/sanity/fragments.ts
+export const IMAGE_FRAGMENT = `
+  "id": asset._ref,
+  "preview": asset->metadata.lqip,
+  hotspot { x, y },
+  crop {
+    bottom,
+    left,
+    right,
+    top,
+  }
+`
+```
+
+Use it in your queries:
+
+```typescript
+import { IMAGE_FRAGMENT } from './fragments'
+
+const query = `
+  *[_type == "post"][0] {
+    title,
+    mainImage {
+      ${IMAGE_FRAGMENT}
+    }
+  }
+`
+```
+
+## TypeScript Types for Image Data
+
+Define TypeScript types for your image data:
+
+```typescript
+export type SanityImageData = {
+  id: string
+  preview?: string
+  hotspot?: {
+    x: number
+    y: number
+  }
+  crop?: {
+    top: number
+    bottom: number
+    left: number
+    right: number
+  }
+  alt?: string
+}
+
+export type Post = {
+  title: string
+  mainImage: SanityImageData
+}
+```
+
+Usage:
+
+```tsx
+function PostImage({ image }: { image: SanityImageData }) {
+  return (
+    <SanityImage
+      id={image.id}
+      baseUrl="..."
+      width={800}
+      hotspot={image.hotspot}
+      crop={image.crop}
+      preview={image.preview}
+      alt={image.alt || ''}
+    />
+  )
+}
+```
+
+## Conditional Fields
+
+Only include preview data when needed:
+
+```groq
+*[_type == "post"] {
+  title,
+  mainImage {
+    "id": asset._ref,
+    hotspot { x, y },
+    crop { bottom, left, right, top },
+    // Only include preview for featured posts
+    featured == true => {
+      "preview": asset->metadata.lqip
+    }
+  }
+}
+```
+
+## Optimizing Queries
+
+### Avoid Over-fetching
+
+Don't fetch image data you won't use:
+
+```groq
+// Bad: Fetching full image data for thumbnails that don't need it
+*[_type == "post"] {
+  thumbnail {
+    "id": asset._ref,
+    "preview": asset->metadata.lqip,
+    hotspot { x, y },
+    crop { bottom, left, right, top }
+  }
+}
+
+// Good: Minimal data for simple thumbnails
+*[_type == "post"] {
+  thumbnail {
+    "id": asset._ref
+  }
+}
+```
+
+### Projection for Performance
+
+Use GROQ projection to limit fields:
+
+```groq
+*[_type == "post"][0...10] {
+  _id,
+  title,
+  "image": mainImage {
+    "id": asset._ref,
+    hotspot { x, y },
+    crop { bottom, left, right, top }
+  }
+} | order(publishedAt desc)
+```
+
+## Fetching Additional Metadata
+
+You can query additional metadata if needed:
+
+```groq
+*[_type == "post"][0] {
+  title,
+  mainImage {
+    "id": asset._ref,
+    "preview": asset->metadata.lqip,
+    "dimensions": asset->metadata.dimensions,
+    "hasAlpha": asset->metadata.hasAlpha,
+    "isOpaque": asset->metadata.isOpaque,
+    hotspot { x, y },
+    crop { bottom, left, right, top },
+    alt
+  }
+}
+```
+
+Metadata fields:
+- `dimensions` - `{ width: number, height: number, aspectRatio: number }`
+- `hasAlpha` - Whether the image has transparency
+- `isOpaque` - Whether the image is fully opaque
+- `palette` - Dominant colors in the image
+
+<Note>
+  You don't need to fetch dimensions—`SanityImage` parses them from the image ID automatically.
+</Note>
+
+## Real-World Example
+
+Complete example with a blog post:
+
+```typescript
+// lib/sanity/queries.ts
+import { client } from './client'
+
+const POST_QUERY = `
+  *[_type == "post" && slug.current == $slug][0] {
+    _id,
+    title,
+    publishedAt,
+    author-> {
+      name,
+      image {
+        "id": asset._ref,
+        hotspot { x, y },
+        crop { bottom, left, right, top }
+      }
+    },
+    mainImage {
+      "id": asset._ref,
+      "preview": asset->metadata.lqip,
+      hotspot { x, y },
+      crop { bottom, left, right, top },
+      alt
+    },
+    body
+  }
+`
+
+export async function getPost(slug: string) {
+  return client.fetch(POST_QUERY, { slug })
+}
+```
+
+```tsx
+// components/Post.tsx
+import { Image } from '@/components/Image'
+
+export function Post({ post }) {
+  return (
+    <article>
+      <Image
+        id={post.mainImage.id}
+        width={1200}
+        height={630}
+        mode="cover"
+        hotspot={post.mainImage.hotspot}
+        crop={post.mainImage.crop}
+        preview={post.mainImage.preview}
+        loading="eager"
+        alt={post.mainImage.alt || post.title}
+      />
+      
+      <h1>{post.title}</h1>
+      
+      <div className="author">
+        <Image
+          id={post.author.image.id}
+          width={48}
+          height={48}
+          mode="cover"
+          hotspot={post.author.image.hotspot}
+          crop={post.author.image.crop}
+          alt={post.author.name}
+        />
+        <span>{post.author.name}</span>
+      </div>
+      
+      {/* Post body */}
+    </article>
+  )
+}
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Wrapper Component" icon="box" href="/guides/wrapper-component">
+    Create a reusable Image wrapper
+  </Card>
+  <Card title="Cover vs Contain" icon="crop" href="/guides/modes">
+    Learn about image modes
+  </Card>
+</CardGroup>

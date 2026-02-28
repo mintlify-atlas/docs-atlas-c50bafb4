@@ -1,0 +1,265 @@
+---
+title: Utility Functions
+description: API reference for utility functions in @sanity-image/url-builder
+---
+
+Utility functions for working with Sanity image IDs and asset references.
+
+## Import
+
+```tsx
+import { parseImageId, assetId, normalizeAssetId } from '@sanity-image/url-builder'
+```
+
+## parseImageId
+
+Parses a Sanity image ID string into its component parts: asset ID, dimensions, and format.
+
+### Signature
+
+```typescript
+function parseImageId(id: string): ImageIdParts
+```
+
+### Parameters
+
+<ParamField path="id" type="string" required>
+  The image ID string in the format `image-<hash>-<width>x<height>-<ext>`.
+  
+  Example: `"image-abc123def456-1920x1080-jpg"`
+</ParamField>
+
+### Returns
+
+<ResponseField name="ImageIdParts" type="object">
+  Object containing the parsed components.
+  
+  ```typescript
+  type ImageIdParts = {
+    assetId: string
+    dimensions: {
+      height: number
+      width: number
+      aspectRatio: number
+    }
+    format: string
+  }
+  ```
+</ResponseField>
+
+### Example
+
+```typescript
+const parts = parseImageId('image-abc123def456-1920x1080-jpg')
+
+// Returns:
+// {
+//   assetId: 'abc123def456',
+//   dimensions: {
+//     width: 1920,
+//     height: 1080,
+//     aspectRatio: 1.7777777777777777
+//   },
+//   format: 'jpg'
+// }
+```
+
+### Error Handling
+
+Throws an error if:
+- The ID doesn't match the expected pattern
+- The dimensions are invalid or cannot be parsed
+
+```typescript
+parseImageId('invalid-id')
+// Error: Could not parse image ID "invalid-id"
+
+parseImageId('image-abc123-NaNxNaN-jpg')
+// Error: Invalid dimensions "NaNxNaN"
+```
+
+---
+
+## assetId
+
+Extracts the asset ID from a Sanity image asset object, whether it has an `_id` or `_ref` field.
+
+### Signature
+
+```typescript
+function assetId(asset: AssetLike): string
+
+type AssetLike = { _id: string } | { _ref: string }
+```
+
+### Parameters
+
+<ParamField path="asset" type="AssetLike" required>
+  An asset object with either an `_id` or `_ref` field.
+  
+  ```typescript
+  type AssetLike = { _id: string } | { _ref: string }
+  ```
+</ParamField>
+
+### Returns
+
+<ResponseField name="id" type="string">
+  The asset ID value from either `_id` or `_ref` field.
+</ResponseField>
+
+### Example
+
+```typescript
+// With _id field
+const id1 = assetId({ _id: 'image-abc123-1920x1080-jpg' })
+// Returns: 'image-abc123-1920x1080-jpg'
+
+// With _ref field
+const id2 = assetId({ _ref: 'image-abc123-1920x1080-jpg' })
+// Returns: 'image-abc123-1920x1080-jpg'
+```
+
+### Use Cases
+
+This is useful when working with Sanity data where asset references can be in either format:
+
+```typescript
+// From a GROQ query with references
+const image = {
+  _ref: 'image-abc123-1920x1080-jpg',
+  crop: { top: 0, bottom: 0, left: 0, right: 0 },
+  hotspot: { x: 0.5, y: 0.5 }
+}
+
+const id = assetId(image)
+// Use the ID with other functions
+const parts = parseImageId(id)
+```
+
+---
+
+## normalizeAssetId
+
+Normalizes an asset object to ensure it has an `_id` field. Converts `_ref` to `_id` if necessary.
+
+### Signature
+
+```typescript
+function normalizeAssetId<T extends Record<string, unknown>>(
+  asset: AssetLike & T
+): Omit<T, '_ref'> & { _id: string }
+```
+
+### Parameters
+
+<ParamField path="asset" type="AssetLike & T" required>
+  An asset object with either `_id` or `_ref`, plus any additional properties.
+  
+  ```typescript
+  type AssetLike = { _id: string } | { _ref: string }
+  ```
+</ParamField>
+
+### Returns
+
+<ResponseField name="normalized" type="Omit<T, '_ref'> & { _id: string }">
+  The asset object with `_ref` removed (if present) and `_id` guaranteed to exist. All other properties are preserved.
+</ResponseField>
+
+### Example
+
+```typescript
+// With _ref field
+const asset1 = {
+  _ref: 'image-abc123-1920x1080-jpg',
+  crop: { top: 0.1, bottom: 0.1, left: 0, right: 0 },
+  hotspot: { x: 0.5, y: 0.3 }
+}
+
+const normalized1 = normalizeAssetId(asset1)
+// Returns:
+// {
+//   _id: 'image-abc123-1920x1080-jpg',
+//   crop: { top: 0.1, bottom: 0.1, left: 0, right: 0 },
+//   hotspot: { x: 0.5, y: 0.3 }
+// }
+// Note: _ref is removed, _id is added
+
+// With _id field (already normalized)
+const asset2 = {
+  _id: 'image-abc123-1920x1080-jpg',
+  crop: { top: 0, bottom: 0, left: 0, right: 0 }
+}
+
+const normalized2 = normalizeAssetId(asset2)
+// Returns the same object with _id preserved
+```
+
+### Use Cases
+
+Useful when you need consistent asset objects with `_id` regardless of the source:
+
+```typescript
+import { normalizeAssetId, parseImageId } from '@sanity-image/url-builder'
+
+// Normalize assets from various sources
+const assets = [
+  { _ref: 'image-abc123-1920x1080-jpg', crop: null, hotspot: null },
+  { _id: 'image-def456-800x600-png', crop: null, hotspot: null }
+].map(normalizeAssetId)
+
+// Now all assets have _id field
+assets.forEach(asset => {
+  const { dimensions } = parseImageId(asset._id)
+  console.log(dimensions)
+})
+```
+
+## Pattern Constants
+
+### SANITY_IMAGE_ID_PATTERN
+
+Regular expression pattern for validating Sanity image IDs.
+
+```typescript
+const SANITY_IMAGE_ID_PATTERN = /^image-([\da-f]+)-(\d+x\d+)-(\w+)$/
+```
+
+#### Example
+
+```typescript
+import { SANITY_IMAGE_ID_PATTERN } from '@sanity-image/url-builder'
+
+const isValid = SANITY_IMAGE_ID_PATTERN.test('image-abc123-1920x1080-jpg')
+// true
+
+const isInvalid = SANITY_IMAGE_ID_PATTERN.test('invalid-format')
+// false
+```
+
+## Type Definitions
+
+### Asset
+
+Complete Sanity asset type with optional crop and hotspot data.
+
+```typescript
+type Asset = {
+  _id: string
+  crop?: CropData | null
+  hotspot?: HotspotData | null
+}
+
+type CropData = {
+  bottom: number
+  left: number
+  right: number
+  top: number
+}
+
+type HotspotData = {
+  x: number
+  y: number
+}
+```

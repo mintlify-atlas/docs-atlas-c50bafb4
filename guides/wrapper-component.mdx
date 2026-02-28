@@ -1,0 +1,345 @@
+---
+title: Creating a Wrapper Component
+description: Simplify your code by creating a reusable Image wrapper component
+---
+
+To improve developer experience and keep your configuration DRY (Don't Repeat Yourself), create a wrapper component around `SanityImage` in your app. This centralizes configuration and provides an entry point for custom logic.
+
+## Why Create a Wrapper?
+
+### Without a Wrapper
+
+You'll repeat the `baseUrl` (or `projectId` and `dataset`) everywhere:
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+  width={500}
+  alt="Product"
+/>
+
+<SanityImage
+  id={hero._id}
+  baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+  width={1200}
+  alt="Hero"
+/>
+```
+
+### With a Wrapper
+
+Configuration is set once, usage is cleaner:
+
+```tsx
+<Image
+  id={image._id}
+  width={500}
+  alt="Product"
+/>
+
+<Image
+  id={hero._id}
+  width={1200}
+  alt="Hero"
+/>
+```
+
+## Basic Wrapper Implementation
+
+Here's the simplest wrapper component:
+
+```tsx
+import * as React from "react"
+import { SanityImage, type WrapperProps } from "sanity-image"
+
+export const Image = <T extends React.ElementType = "img">(
+  props: WrapperProps<T>
+) => (
+  <SanityImage
+    baseUrl="https://cdn.sanity.io/images/<project-id>/<dataset>/"
+    {...props}
+  />
+)
+```
+
+### How It Works
+
+1. **Generic Type Parameter** - `<T extends React.ElementType = "img">` enables polymorphic rendering
+2. **WrapperProps Type** - Omits configuration props (like `baseUrl`) from the component's API
+3. **Spread Props** - `{...props}` passes through all other props to `SanityImage`
+4. **Centralized Config** - `baseUrl` is set once in the wrapper
+
+## Using the Wrapper
+
+Once created, use your `Image` component throughout your app:
+
+```tsx
+import { Image } from '@/components/Image'
+
+function ProductCard({ product }) {
+  return (
+    <article>
+      <Image
+        id={product.image._id}
+        width={450}
+        hotspot={product.image.hotspot}
+        crop={product.image.crop}
+        preview={product.image.asset.metadata.lqip}
+        alt={product.image.alt}
+      />
+      <h2>{product.name}</h2>
+    </article>
+  )
+}
+```
+
+## TypeScript Support
+
+The wrapper maintains full TypeScript support and polymorphism:
+
+```tsx
+// Standard img element
+<Image
+  id={image._id}
+  width={500}
+  onClick={() => console.log('clicked')}
+  alt="Clickable"
+/>
+
+// Render as a different element
+<Image
+  as="source"
+  id={image._id}
+  media="(min-width: 768px)"
+/>
+
+// Custom component
+<Image
+  as={NextImage}
+  id={image._id}
+  priority
+/>
+```
+
+TypeScript knows what props are available based on the `as` prop!
+
+## Complete Example with Custom Logic
+
+Here's a more advanced wrapper with additional features:
+
+```tsx
+import * as React from "react"
+import { SanityImage, type WrapperProps } from "sanity-image"
+
+const PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID
+const DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET
+
+export const Image = <T extends React.ElementType = "img">({
+  queryParams,
+  alt,
+  ...props
+}: WrapperProps<T>) => {
+  // Warn in development if alt text is missing
+  React.useEffect(() => {
+    if (process.env.NODE_ENV === 'development' && !alt) {
+      console.warn('Image is missing alt text:', props.id)
+    }
+  }, [alt, props.id])
+
+  return (
+    <SanityImage
+      projectId={PROJECT_ID}
+      dataset={DATASET}
+      queryParams={{
+        q: 85, // Default quality
+        ...queryParams, // Allow overrides
+      }}
+      alt={alt || ''}
+      {...props}
+    />
+  )
+}
+```
+
+This wrapper:
+- Uses environment variables for project configuration
+- Sets a default image quality
+- Warns in development when `alt` text is missing
+- Allows all defaults to be overridden
+
+## Configuration Options
+
+### Using `baseUrl`
+
+If you have the full URL:
+
+```tsx
+<SanityImage
+  baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+  {...props}
+/>
+```
+
+### Using `projectId` and `dataset`
+
+If you prefer separate configuration:
+
+```tsx
+<SanityImage
+  projectId="abcd1234"
+  dataset="production"
+  {...props}
+/>
+```
+
+Both approaches produce identical URLs.
+
+## Advanced: Multiple Environments
+
+Handle different environments in your wrapper:
+
+```tsx
+import * as React from "react"
+import { SanityImage, type WrapperProps } from "sanity-image"
+
+const PROJECT_ID = process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!
+const DATASET = process.env.NEXT_PUBLIC_SANITY_DATASET!
+const IS_PREVIEW = DATASET.includes('preview')
+
+export const Image = <T extends React.ElementType = "img">({
+  queryParams,
+  ...props
+}: WrapperProps<T>) => (
+  <SanityImage
+    projectId={PROJECT_ID}
+    dataset={DATASET}
+    queryParams={{
+      // Lower quality in preview for faster loading
+      q: IS_PREVIEW ? 70 : 85,
+      ...queryParams,
+    }}
+    {...props}
+  />
+)
+```
+
+## Emotion `jsxImportSource` Workaround
+
+If you're using Emotion's `jsxImportSource`, TypeScript may complain about polymorphic props. Use this workaround:
+
+```tsx
+export const Image = <T extends React.ElementType = "img">(
+  props: WrapperProps<T>
+) => (
+  {/* @ts-expect-error Emotion types are incompatible with polymorphic component */}
+  <SanityImage baseUrl="<your-baseurl-here>" {...props} />
+)
+```
+
+This suppresses the error in the wrapper while maintaining full type safety where you use `<Image>`.
+
+## The `WrapperProps` Type
+
+The `WrapperProps<T>` type is exported specifically for creating wrappers:
+
+```tsx
+import { type WrapperProps } from "sanity-image"
+
+// WrapperProps omits configuration props:
+// - baseUrl
+// - projectId  
+// - dataset
+
+// All other props are included:
+// - id, width, height, mode, hotspot, crop, preview, queryParams
+// - All HTML img attributes (alt, className, onClick, etc.)
+// - Polymorphic props based on the `as` prop
+```
+
+### Omitting Additional Props
+
+You can omit additional props from your wrapper's API:
+
+```tsx
+export const Image = <T extends React.ElementType = "img">(
+  props: WrapperProps<T, 'baseUrl' | 'queryParams'>
+) => (
+  <SanityImage
+    baseUrl="..."
+    queryParams={{ q: 85 }}
+    {...props}
+  />
+)
+
+// Users of this component cannot pass queryParams
+```
+
+## Where to Place the Wrapper
+
+Common locations:
+
+```
+src/
+  components/
+    Image.tsx          # ← Here
+  lib/
+    Image.tsx          # ← Or here
+  shared/
+    Image.tsx          # ← Or here
+```
+
+Then import it throughout your app:
+
+```tsx
+import { Image } from '@/components/Image'
+import { Image } from '@/lib/Image'
+import { Image } from '@/shared/Image'
+```
+
+## Testing Your Wrapper
+
+Test that your wrapper passes props correctly:
+
+```tsx
+import { render } from '@testing-library/react'
+import { Image } from './Image'
+
+test('wrapper sets baseUrl', () => {
+  const { container } = render(
+    <Image
+      id="image-abc123-1200x800-jpg"
+      width={600}
+      alt="Test"
+    />
+  )
+  
+  const img = container.querySelector('img')
+  expect(img?.src).toContain('cdn.sanity.io/images')
+})
+
+test('wrapper allows prop overrides', () => {
+  const { container } = render(
+    <Image
+      id="image-abc123-1200x800-jpg"
+      width={600}
+      loading="eager"
+      alt="Test"
+    />
+  )
+  
+  const img = container.querySelector('img')
+  expect(img?.loading).toBe('eager')
+})
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="GROQ Queries" icon="database" href="/guides/groq-queries">
+    Learn how to fetch image data from Sanity
+  </Card>
+  <Card title="API Reference" icon="code" href="/api/sanity-image">
+    See all available props and options
+  </Card>
+</CardGroup>

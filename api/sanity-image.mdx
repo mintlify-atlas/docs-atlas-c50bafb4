@@ -1,0 +1,176 @@
+---
+title: SanityImage
+description: Component API reference for the SanityImage React component
+---
+
+The `SanityImage` component is a polymorphic React component that renders optimized images from Sanity's CDN with automatic URL generation, srcset creation, and responsive image support.
+
+## Import
+
+```tsx
+import { SanityImage } from '@sanity-image/react'
+```
+
+## Props
+
+The `SanityImage` component accepts all standard HTML `<img>` attributes plus the following props:
+
+### Configuration Props
+
+<ParamField path="projectId" type="string">
+  The Sanity project ID to use. If preferred, provide `baseUrl` instead.
+</ParamField>
+
+<ParamField path="dataset" type="string">
+  The Sanity dataset to use. If preferred, provide `baseUrl` instead.
+</ParamField>
+
+<ParamField path="baseUrl" type="string">
+  The base URL for the Sanity CDN. If not provided, the `projectId` and `dataset` props will be used to construct the URL.
+</ParamField>
+
+### Image Query Props
+
+<ParamField path="id" type="string" required>
+  The Sanity Image ID (`_id` or `_ref` field value).
+</ParamField>
+
+<ParamField path="mode" type="'cover' | 'contain'" default="contain">
+  Use `cover` to crop the image to match the requested aspect ratio (based on `width` and `height`). Use `contain` to fit the image to the boundaries provided without altering the aspect ratio.
+</ParamField>
+
+<ParamField path="width" type="number">
+  The target width of the image in pixels. Only used for determining the dimensions of the generated assets, not for layout. Use CSS to specify how the browser should render the image instead.
+</ParamField>
+
+<ParamField path="height" type="number">
+  The target height of the image in pixels. Only used for determining the dimensions of the generated assets, not for layout. Use CSS to specify how the browser should render the image instead.
+</ParamField>
+
+<ParamField path="hotspot" type="{ x: number; y: number } | null">
+  The hotspot coordinates to use for the image. Coordinates are between 0 and 1. Note: hotspot `width` and `height` are not used.
+</ParamField>
+
+<ParamField path="crop" type="CropData | null">
+  The crop coordinates to use for the image.
+  
+  ```typescript
+  type CropData = {
+    bottom: number
+    left: number
+    right: number
+    top: number
+  }
+  ```
+</ParamField>
+
+<ParamField path="queryParams" type="DirectQueryParams">
+  Query string params to pass to Sanity's image CDN directly. Note that this is only a subset of the params supported by the Sanity image CDN.
+  
+  ```typescript
+  type DirectQueryParams = {
+    blur?: number           // Blur 1-2000
+    flip?: 'h' | 'v' | 'hv' // Flip horizontally, vertically, or both
+    fm?: 'jpg' | 'pjpg' | 'png' | 'webp' // Convert image format
+    q?: number              // Quality 0-100 (defaults to 75)
+    sat?: -100              // Saturation (-100 for grayscale)
+    sharp?: number          // Sharpen 0-100
+  }
+  ```
+</ParamField>
+
+### Component Props
+
+<ParamField path="preview" type="string">
+  A low-quality image placeholder (LQIP) to display while the full image loads. Used with `ImageWithPreview` component.
+</ParamField>
+
+### HTML Attribute Overrides
+
+<ParamField path="htmlHeight" type="number">
+  Passed through to the rendered element as `height`, overriding the default behavior of setting the `height` property automatically based on the computed output image dimensions.
+</ParamField>
+
+<ParamField path="htmlWidth" type="number">
+  Passed through to the rendered element as `width`, overriding the default behavior of setting the `width` property automatically based on the computed output image dimensions.
+</ParamField>
+
+<ParamField path="htmlId" type="string">
+  Passed through to the rendered element as `id`. The `id` prop is used to specify the Sanity Image ID, so this is the only way to set the `id` attribute on the rendered element.
+</ParamField>
+
+### Polymorphic Props
+
+<ParamField path="as" type="React.ElementType">
+  Allows rendering as a different element type. Defaults to `img`. When specified, the component will accept all props valid for that element type.
+</ParamField>
+
+## Usage Examples
+
+### Basic Usage
+
+```tsx
+<SanityImage
+  id="image-abc123-1920x1080-jpg"
+  baseUrl="https://cdn.sanity.io/images/project/dataset/"
+  width={800}
+  alt="A beautiful landscape"
+/>
+```
+
+### With Project Configuration
+
+```tsx
+<SanityImage
+  id="image-abc123-1920x1080-jpg"
+  projectId="your-project-id"
+  dataset="production"
+  width={800}
+  height={600}
+  mode="cover"
+  alt="A beautiful landscape"
+/>
+```
+
+### With Hotspot and Crop
+
+```tsx
+<SanityImage
+  id="image-abc123-1920x1080-jpg"
+  baseUrl="https://cdn.sanity.io/images/project/dataset/"
+  width={800}
+  height={600}
+  mode="cover"
+  hotspot={{ x: 0.5, y: 0.3 }}
+  crop={{ top: 0.1, bottom: 0.1, left: 0, right: 0 }}
+  alt="Cropped image with focus point"
+/>
+```
+
+### With Query Parameters
+
+```tsx
+<SanityImage
+  id="image-abc123-1920x1080-jpg"
+  baseUrl="https://cdn.sanity.io/images/project/dataset/"
+  width={800}
+  queryParams={{
+    blur: 50,
+    q: 90,
+    fm: 'webp'
+  }}
+  alt="Blurred high-quality WebP image"
+/>
+```
+
+## Type Definitions
+
+```typescript
+type SanityImageProps<T extends React.ElementType> = FullImageProps & PolymorphicProps<T>
+
+type FullImageProps = BaseImageProps & SanityImageConfigurationProps
+
+type BaseImageProps = SanityImageAttributeOverrideProps &
+  SanityImageComponentProps &
+  ImageQueryInputs
+```

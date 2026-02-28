@@ -1,0 +1,228 @@
+---
+title: URL Builder Functions
+description: API reference for URL building functions in @sanity-image/url-builder
+---
+
+The URL builder package provides functions to generate Sanity CDN URLs with query parameters for image transformations.
+
+## Import
+
+```tsx
+import { buildSrc, buildSrcSet, buildSvgAttributes } from '@sanity-image/url-builder'
+```
+
+## buildSrc
+
+Converts image parameters into a full CDN URL with computed output dimensions.
+
+### Signature
+
+```typescript
+function buildSrc(inputs: ImageSrcInputs): ComputedImageData
+```
+
+### Parameters
+
+<ParamField path="inputs" type="ImageSrcInputs" required>
+  Image source inputs including base URL and query parameters.
+  
+  ```typescript
+  type ImageSrcInputs = ImageQueryInputs & { baseUrl: string }
+  
+  type ImageQueryInputs = {
+    id: string                              // Sanity Image ID
+    mode?: 'cover' | 'contain'              // Defaults to 'contain'
+    width?: number                          // Target width in pixels
+    height?: number                         // Target height in pixels
+    hotspot?: { x: number; y: number } | null
+    crop?: CropData | null
+    queryParams?: DirectQueryParams
+  }
+  ```
+</ParamField>
+
+### Returns
+
+<ResponseField name="ComputedImageData" type="object">
+  Object containing the full URL and computed dimensions.
+  
+  ```typescript
+  type ComputedImageData = {
+    src: string      // Full URL to the image
+    width: number    // Actual output width in pixels
+    height: number   // Actual output height in pixels
+  }
+  ```
+</ResponseField>
+
+### Example
+
+```typescript
+const imageData = buildSrc({
+  id: 'image-abc123-1920x1080-jpg',
+  baseUrl: 'https://cdn.sanity.io/images/project/dataset/',
+  width: 800,
+  height: 600,
+  mode: 'cover'
+})
+
+// Returns:
+// {
+//   src: 'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=800&h=600&fit=crop&q=75&auto=format',
+//   width: 800,
+//   height: 600
+// }
+```
+
+---
+
+## buildSrcSet
+
+Generates a responsive srcset string with multiple image sizes for different pixel densities.
+
+### Signature
+
+```typescript
+function buildSrcSet(inputs: ImageSrcInputs): string[]
+```
+
+### Parameters
+
+<ParamField path="inputs" type="ImageSrcInputs" required>
+  Same parameters as `buildSrc`. The function generates multiple sizes based on the provided width.
+</ParamField>
+
+### Returns
+
+<ResponseField name="srcset" type="string[]">
+  Array of srcset entries in the format `<url> <width>w`. Multipliers are automatically determined based on the base width:
+  
+  - Width < 160px: `[0.5, 1, 2]`
+  - Width < 750px: `[0.5, 1, 1.5, 2]`
+  - Width < 1400px: `[0.25, 0.5, 0.75, 1, 1.5, 2]`
+  - Width ≥ 1400px: `[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2]`
+  
+  Entries with width < 50px at multipliers < 1 are excluded.
+</ResponseField>
+
+### Example
+
+```typescript
+const srcSet = buildSrcSet({
+  id: 'image-abc123-1920x1080-jpg',
+  baseUrl: 'https://cdn.sanity.io/images/project/dataset/',
+  width: 800,
+  mode: 'contain'
+})
+
+// Returns:
+// [
+//   'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=200&fit=max&q=75&auto=format 200w',
+//   'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=400&fit=max&q=75&auto=format 400w',
+//   'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=600&fit=max&q=75&auto=format 600w',
+//   'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=800&fit=max&q=75&auto=format 800w',
+//   'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=1200&fit=max&q=75&auto=format 1200w',
+//   'https://cdn.sanity.io/images/project/dataset/abc123-1920x1080.jpg?w=1600&fit=max&q=75&auto=format 1600w'
+// ]
+```
+
+### Usage in HTML
+
+```tsx
+<img
+  srcSet={buildSrcSet({ ... }).join(', ')}
+  sizes="(max-width: 768px) 100vw, 800px"
+  src={buildSrc({ ... }).src}
+  alt="Responsive image"
+/>
+```
+
+---
+
+## buildSvgAttributes
+
+Generates attributes for SVG images. SVGs don't support query parameters, so this returns the direct asset URL with original dimensions.
+
+### Signature
+
+```typescript
+function buildSvgAttributes(inputs: ImageSrcInputs): ComputedImageData
+```
+
+### Parameters
+
+<ParamField path="inputs" type="ImageSrcInputs" required>
+  Requires `id` and `baseUrl`. Other transformation parameters are ignored for SVG images.
+</ParamField>
+
+### Returns
+
+<ResponseField name="attributes" type="ComputedImageData">
+  Object with the SVG URL and original dimensions.
+  
+  ```typescript
+  {
+    src: string      // Direct URL to SVG (no query parameters)
+    width: number    // Original width from image ID
+    height: number   // Original height from image ID
+  }
+  ```
+</ResponseField>
+
+### Example
+
+```typescript
+const svgData = buildSvgAttributes({
+  id: 'image-abc123-800x600-svg',
+  baseUrl: 'https://cdn.sanity.io/images/project/dataset/'
+})
+
+// Returns:
+// {
+//   src: 'https://cdn.sanity.io/images/project/dataset/abc123-800x600.svg',
+//   width: 800,
+//   height: 600
+// }
+```
+
+## Common Types
+
+### DirectQueryParams
+
+```typescript
+type DirectQueryParams = {
+  blur?: number              // Blur 1-2000
+  flip?: 'h' | 'v' | 'hv'   // Flip horizontally, vertically, or both
+  fm?: 'jpg' | 'pjpg' | 'png' | 'webp'  // Convert image format
+  q?: number                 // Quality 0-100 (defaults to 75)
+  sat?: -100                 // Saturation (-100 for grayscale only)
+  sharp?: number             // Sharpen 0-100
+}
+```
+
+### CropData
+
+```typescript
+type CropData = {
+  bottom: number  // Crop from bottom (0-1)
+  left: number    // Crop from left (0-1)
+  right: number   // Crop from right (0-1)
+  top: number     // Crop from top (0-1)
+}
+```
+
+## Mode Behavior
+
+### contain (default)
+
+- Fits the image within the specified dimensions
+- Preserves aspect ratio
+- Uses `fit=max` query parameter
+- Height parameter is converted to width-based constraint
+
+### cover
+
+- Crops the image to match the requested aspect ratio
+- Uses `fit=crop` query parameter
+- Respects hotspot for focal point cropping
+- Falls back to `crop=entropy` if no hotspot provided

@@ -1,0 +1,104 @@
+---
+title: Basic Usage
+description: Simple examples to get started with sanity-image
+---
+
+# Basic Usage
+
+Get started with sanity-image using these basic examples.
+
+## Simplest Example
+
+This will render the image at half its original width with a srcSet included:
+
+```tsx
+import { SanityImage } from "sanity-image"
+
+const YourSweetComponent = ({ image }: ComponentProps) => (
+  <SanityImage
+    // Pass the Sanity Image ID (`_id`) (e.g., `image-abcde12345-1200x800-jpg`)
+    id={image._id}
+    baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+    alt="Demo image"
+  />
+)
+```
+
+## Full-Featured Example
+
+This example shows most of the available features:
+
+```tsx
+import { SanityImage } from "sanity-image"
+
+const YourSweetComponent = ({ image }: ComponentProps) => (
+  <SanityImage
+    // Pass the Sanity Image ID (`_id`) (e.g., `image-abcde12345-1200x800-jpg`)
+    id={image._id}
+    //
+    // You can set the base URL manually, or let it be constructed by passing
+    // `projectId` and `dataset` props.
+    baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+    //
+    // Specify how big it is expected to render so a reasonable srcSet can be
+    // generated using `width`, `height`, or both
+    width={500}
+    height={250}
+    //
+    // Choose whether you want it to act like `object-fit: cover` or
+    // `object-fit: contain`, or leave it out to use the default (contain)
+    mode="cover"
+    //
+    // Have hotspot or crop data from Sanity? Pass it in!
+    hotspot={image.hotspot}
+    crop={image.crop}
+    //
+    // Want low-quality image previews? Fetch them from Sanity and pass them in too.
+    preview={image.asset.metadata.lqip}
+    //
+    // Have a burning desire to have Sanity change the format or something?
+    // Most of the visual effects from the Sanity Image API are available:
+    queryParams={{ sharp: 30, q: 80 }}
+    //
+    // Anything else you want to pass through to the img tag? Go for it!
+    alt="Sweet Christmas!"
+    className="big-ol-image"
+    sizes="(min-width: 500px) 500px, 100vw"
+  />
+)
+
+export default YourSweetComponent
+```
+
+## Using Hotspot and Crop
+
+When you have hotspot and crop data from Sanity, pass them to ensure proper image cropping:
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+  width={500}
+  height={250}
+  mode="cover"
+  hotspot={image.hotspot}
+  crop={image.crop}
+  alt="Image with hotspot"
+/>
+```
+
+### Fetching Hotspot and Crop from Sanity
+
+Use this GROQ query to fetch the necessary fields:
+
+```groq
+"id": asset._ref,
+"preview": asset->metadata.lqip,
+hotspot { x, y },
+crop {
+  bottom,
+  left,
+  right,
+  top,
+}
+```

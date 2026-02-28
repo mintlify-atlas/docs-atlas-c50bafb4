@@ -1,0 +1,143 @@
+---
+title: Cover vs Contain Modes
+description: Learn the difference between cover and contain modes and when to use each one
+---
+
+The `mode` prop controls how `SanityImage` handles aspect ratio changes when you specify both `width` and `height`. Understanding the difference between `cover` and `contain` is essential for getting the exact image behavior you need.
+
+## The Two Modes
+
+### Contain Mode (Default)
+
+**Contain** mode treats the dimensions you provide as boundaries, resizing the image to fit inside of them. The output image will match the aspect ratio of the original image—no cropping will occur.
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+  width={500}
+  height={300}
+  mode="contain" // or omit, as this is the default
+  alt="Product image"
+/>
+```
+
+With contain mode, if your original image is 1200×800 (3:2 ratio) and you request 500×300 (5:3 ratio), the image will be resized to fit within those boundaries while maintaining its 3:2 aspect ratio.
+
+### Cover Mode
+
+**Cover** mode treats the dimensions you provide as a container, resizing the image to completely fill the dimensions. The output image will match the aspect ratio of the dimensions you provide.
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="https://cdn.sanity.io/images/abcd1234/production/"
+  width={500}
+  height={300}
+  mode="cover"
+  alt="Product image"
+/>
+```
+
+With cover mode, if your original image is 1200×800 (3:2 ratio) and you request 500×300 (5:3 ratio), the image will be cropped to exactly 500×300 to match your requested aspect ratio.
+
+## Visual Comparison
+
+![Sanity Image Mode Explanation](https://github.com/user-attachments/assets/82125edb-2081-448e-9f06-c90d4f0bbf34)
+
+## When to Use Each Mode
+
+### Use Contain When:
+
+- You want to preserve the original aspect ratio of the image
+- You're displaying images with varying aspect ratios in a flexible layout
+- Cropping important parts of the image is not acceptable
+- You only provide one dimension (`width` or `height`, but not both)
+
+### Use Cover When:
+
+- You need all images to match a specific aspect ratio
+- You're creating a grid of images that should have consistent heights
+- You want images to completely fill their container
+- You have hotspot data from Sanity Studio to control cropping
+
+<Note>
+  If you only provide one dimension (`width` or `height`), the mode doesn't matter—both modes behave the same way since there's no aspect ratio change.
+</Note>
+
+## Cover Mode with Grid Layouts
+
+A common use case for `cover` mode is creating uniform grid layouts. Here's an example of a 3-column grid where all images have the same height:
+
+```jsx
+<div
+  css={{
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 15,
+    maxWidth: 1240,
+    paddingInline: 20,
+    marginInline: "auto",
+  }}
+>
+  {images.map((image) => (
+    <div key={image._id}>
+      <SanityImage
+        id={image._id}
+        baseUrl="..."
+        width={390}
+        height={260}
+        mode="cover"
+        hotspot={image.hotspot}
+        crop={image.crop}
+        sizes="(min-width: 1240px) 390px, calc((100vw - 40px - 30px) / 3)"
+        alt={image.alt}
+      />
+    </div>
+  ))}
+</div>
+```
+
+This produces images with a 3:2 aspect ratio (390×260) that fill each column width, even if the source images have different aspect ratios.
+
+## Automatic Intelligent Cropping
+
+When using `cover` mode without a `hotspot` value, `SanityImage` automatically sets `crop=entropy` in the Sanity Image API. This tells Sanity to crop to the most "interesting" part of the image based on visual analysis.
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={390}
+  height={260}
+  mode="cover"
+  // No hotspot provided - Sanity will use entropy-based cropping
+  alt="Product image"
+/>
+```
+
+If you have hotspot data from Sanity Studio, pass it in to control exactly where the crop focuses:
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={390}
+  height={260}
+  mode="cover"
+  hotspot={image.hotspot} // Use editor-defined focal point
+  crop={image.crop}
+  alt="Product image"
+/>
+```
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Image Styling" icon="paintbrush" href="/guides/styling">
+    Learn CSS best practices for responsive images
+  </Card>
+  <Card title="GROQ Queries" icon="database" href="/guides/groq-queries">
+    Fetch hotspot and crop data from Sanity
+  </Card>
+</CardGroup>

@@ -1,0 +1,249 @@
+---
+title: Image Styling Guide
+description: CSS recommendations and responsive image patterns for SanityImage
+---
+
+Since `SanityImage` outputs a single `<img>` tag with no wrapper elements, you have complete control over styling. This guide covers best practices for making your images responsive and handling common layout patterns.
+
+## Recommended Base Styles
+
+Set these CSS rules globally for images in your project to ensure they behave as responsive, block-level elements:
+
+```css
+img {
+  display: block;
+  max-width: 100%;
+  width: 100%;
+  height: auto;
+}
+```
+
+### What This Does
+
+- **`display: block`** - Removes the inline spacing below images
+- **`max-width: 100%`** - Prevents images from overflowing their container
+- **`width: 100%`** - Makes images fill their container width
+- **`height: auto`** - Maintains aspect ratio even with `width` and `height` attributes set
+
+<Note>
+  These styles ensure images are infinitely scalable within their containers, even though `SanityImage` sets explicit `width` and `height` attributes to prevent layout shifts.
+</Note>
+
+## Responsive Grid Example
+
+Here's how to create a 3-column responsive grid where images scale with the viewport:
+
+```jsx
+<div
+  css={{
+    display: "grid",
+    gridTemplateColumns: "repeat(3, 1fr)",
+    gap: 15,
+    maxWidth: 1240,
+    paddingInline: 20,
+    marginInline: "auto",
+  }}
+>
+  {["image-a", "image-b", "image-c"].map((imageId) => (
+    <div key={imageId}>
+      <SanityImage
+        id={imageId}
+        baseUrl="..."
+        width={390}
+        sizes="(min-width: 1240px) 390px, calc((100vw - 40px - 30px) / 3)"
+        alt="Grid item"
+      />
+    </div>
+  ))}
+</div>
+```
+
+### How It Works
+
+1. The grid has a maximum width of 1,240px with 20px padding on each side
+2. Each column is approximately 390px at maximum width
+3. The `sizes` attribute tells the browser the actual rendered size:
+   - At 1240px and above: each image is exactly 390px
+   - Below 1240px: each image is `(viewport width - 40px padding - 30px gap) / 3`
+4. With the base CSS above, images automatically scale down on smaller screens
+
+## Uniform Height Grid
+
+To create a grid where all images have the same height, use `cover` mode:
+
+```jsx
+<SanityImage
+  id={imageId}
+  baseUrl="..."
+  width={390}
+  height={260}
+  mode="cover"
+  sizes="(min-width: 1240px) 390px, calc((100vw - 40px - 30px) / 3)"
+  alt="Grid item"
+/>
+```
+
+This creates images with a 3:2 aspect ratio (390×260) that maintain consistent heights across the grid, even if source images have different aspect ratios.
+
+## Object Fit for Fine Control
+
+While `mode="cover"` controls how Sanity crops the image, CSS `object-fit` controls how the browser displays it:
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={400}
+  height={300}
+  mode="cover"
+  css={{
+    objectFit: "cover",
+    objectPosition: "center",
+  }}
+  alt="Hero image"
+/>
+```
+
+### Object Fit Values
+
+- **`cover`** - Fills the container, cropping if necessary (similar to `mode="cover"`)
+- **`contain`** - Fits within the container, letterboxing if necessary
+- **`fill`** - Stretches to fill the container (may distort)
+- **`none`** - Displays at original size
+- **`scale-down`** - Uses the smallest of `none` or `contain`
+
+## The `sizes` Attribute
+
+The `sizes` attribute is crucial for responsive images. It tells the browser what size the image will be rendered at different viewport widths:
+
+```tsx
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={800}
+  sizes="(min-width: 1200px) 800px, (min-width: 768px) 50vw, 100vw"
+  alt="Responsive image"
+/>
+```
+
+This tells the browser:
+- At 1200px and above: image is 800px wide
+- Between 768px and 1200px: image is 50% of viewport width
+- Below 768px: image is 100% of viewport width
+
+<Tip>
+  The browser uses `sizes` to choose the best image from the `srcSet`. Without it, the browser assumes the image is 100vw (full viewport width).
+</Tip>
+
+## Common Layout Patterns
+
+### Full-Width Hero Image
+
+```tsx
+<SanityImage
+  id={hero._id}
+  baseUrl="..."
+  width={1920}
+  height={800}
+  mode="cover"
+  loading="eager" // Above the fold
+  sizes="100vw"
+  css={{
+    width: "100%",
+    height: "auto",
+    minHeight: "400px",
+    maxHeight: "800px",
+    objectFit: "cover",
+  }}
+  alt="Hero image"
+/>
+```
+
+### Sidebar Thumbnail
+
+```tsx
+<SanityImage
+  id={thumbnail._id}
+  baseUrl="..."
+  width={150}
+  height={150}
+  mode="cover"
+  css={{
+    width: "150px",
+    height: "150px",
+    objectFit: "cover",
+    borderRadius: "8px",
+  }}
+  alt="Thumbnail"
+/>
+```
+
+### Constrained Content Image
+
+```tsx
+<SanityImage
+  id={content._id}
+  baseUrl="..."
+  width={800}
+  sizes="(min-width: 800px) 800px, 100vw"
+  css={{
+    maxWidth: "800px",
+    width: "100%",
+    height: "auto",
+    marginInline: "auto",
+  }}
+  alt="Content image"
+/>
+```
+
+## Styling with CSS-in-JS
+
+SanityImage works seamlessly with CSS-in-JS libraries like Emotion:
+
+```tsx
+import { css } from '@emotion/react'
+
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={600}
+  css={css`
+    border-radius: 12px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s;
+
+    &:hover {
+      transform: scale(1.05);
+    }
+  `}
+  alt="Interactive image"
+/>
+```
+
+## Preventing Layout Shift
+
+`SanityImage` automatically sets `width` and `height` attributes based on the computed output dimensions. Combined with the recommended CSS, this prevents layout shift during page load:
+
+```tsx
+// SanityImage automatically sets width and height attributes
+<SanityImage
+  id={image._id}
+  baseUrl="..."
+  width={800}
+  alt="No layout shift"
+/>
+// Renders: <img width="800" height="533" ... />
+```
+
+The `height: auto` CSS rule allows the height to scale proportionally, while the attributes prevent the browser from reserving no space before the image loads.
+
+## Next Steps
+
+<CardGroup cols={2}>
+  <Card title="Cover vs Contain" icon="crop" href="/guides/modes">
+    Understand when to use each mode
+  </Card>
+  <Card title="Background Images" icon="image" href="/guides/background-images">
+    Use SanityImage for background images
+  </Card>
+</CardGroup>

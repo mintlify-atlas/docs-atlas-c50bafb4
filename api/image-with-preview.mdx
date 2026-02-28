@@ -1,0 +1,143 @@
+---
+title: ImageWithPreview
+description: Component API reference for the ImageWithPreview React component
+---
+
+The `ImageWithPreview` component renders a low-quality image placeholder (LQIP) while the full-resolution image loads, providing a better user experience with progressive image loading.
+
+## Import
+
+```tsx
+import { ImageWithPreview } from '@sanity-image/react'
+```
+
+## How It Works
+
+The component renders two `<img>` elements:
+
+1. A preview image (LQIP) that displays immediately
+2. The full-resolution image that loads in the background
+
+When the full image finishes loading, the preview is removed and the full image is revealed. The full image is rendered with special styles while loading to ensure it doesn't interfere with the layout or trigger lazy-loading issues.
+
+## Props
+
+<ParamField path="preview" type="string" required>
+  The URL or data URI of the low-quality image placeholder to display while the full image loads.
+</ParamField>
+
+<ParamField path="as" type="React.ElementType">
+  Allows rendering as a different element type. Defaults to `img`.
+</ParamField>
+
+<ParamField path="style" type="React.CSSProperties">
+  CSS styles to apply to both the preview and full images.
+</ParamField>
+
+<ParamField path="alt" type="string">
+  Alternative text for the image. Applied to whichever image is currently visible.
+</ParamField>
+
+<ParamField path="id" type="string">
+  HTML id attribute. Applied only to the preview image.
+</ParamField>
+
+<ParamField path="className" type="string">
+  CSS class name. Applied only to the preview image.
+</ParamField>
+
+<ParamField path="width" type="number">
+  Image width in pixels. Applied to both images and used to calculate aspect ratio.
+</ParamField>
+
+<ParamField path="height" type="number">
+  Image height in pixels. Applied to both images and used to calculate aspect ratio.
+</ParamField>
+
+The component also accepts all other standard HTML `<img>` attributes (or attributes for the element specified in `as`).
+
+## Loading Behavior
+
+### Preview Image
+
+The preview image is rendered with:
+- The `preview` URL as the `src`
+- All specified dimensions, classes, and styles
+- A `data-lqip` attribute for styling/selection
+- Only visible until the full image loads
+
+### Full Image (While Loading)
+
+While loading, the full image is rendered with:
+- Minimum 10px × 10px dimensions (to avoid lazy-loading)
+- Absolute positioning with `z-index: -10`
+- `opacity: 0` to hide it
+- `pointerEvents: 'none'` and `userSelect: 'none'`
+- A `data-loading="true"` attribute
+
+### Full Image (After Loading)
+
+After loading completes:
+- All special loading styles are removed
+- The specified `style` prop is applied
+- The preview image is unmounted
+- The `data-loading` attribute is removed
+
+## Usage Examples
+
+### Basic Usage
+
+```tsx
+<ImageWithPreview
+  preview="data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+  src="https://cdn.sanity.io/images/project/dataset/image-abc123-1920x1080.jpg"
+  width={1920}
+  height={1080}
+  alt="A beautiful landscape"
+/>
+```
+
+### With Custom Styling
+
+```tsx
+<ImageWithPreview
+  preview="data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+  src="https://cdn.sanity.io/images/project/dataset/image-abc123-1920x1080.jpg"
+  width={1920}
+  height={1080}
+  className="rounded-lg shadow-md"
+  style={{ objectFit: 'cover' }}
+  alt="A beautiful landscape"
+/>
+```
+
+### With Different Element Type
+
+```tsx
+<ImageWithPreview
+  as="picture"
+  preview="data:image/jpeg;base64,/9j/4AAQSkZJRg..."
+  src="https://cdn.sanity.io/images/project/dataset/image-abc123-1920x1080.jpg"
+  width={1920}
+  height={1080}
+  alt="A beautiful landscape"
+/>
+```
+
+## Type Definition
+
+```typescript
+type SanityImageWithPreviewProps<T extends React.ElementType> = 
+  PolymorphicProps<T> & { preview: string }
+
+type PolymorphicProps<T extends React.ElementType> = {
+  as?: T
+} & Omit<React.ComponentPropsWithoutRef<T>, keyof FullImageProps | "as">
+```
+
+## Implementation Notes
+
+- The component uses `useEffect` to check if the image is already cached (`ref.current?.complete`) and immediately calls `onLoad` if so
+- The aspect ratio is automatically calculated from `width` and `height` props and applied to the preview image
+- The loading state is managed internally with `useState`
+- The component prevents layout shift by maintaining consistent dimensions throughout the loading process

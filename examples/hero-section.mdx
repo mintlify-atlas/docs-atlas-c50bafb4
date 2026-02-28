@@ -1,0 +1,88 @@
+---
+title: Hero Section
+description: Use sanity-image as a background image in hero sections
+---
+
+# Hero Section Example
+
+Learn how to use sanity-image as a background image for hero sections and other full-width layouts.
+
+## Full Example
+
+This example shows a hero section with a background image positioned absolutely behind content:
+
+```jsx
+<section
+  css={{
+    position: "relative",
+    paddingBlock: 100,
+  }}
+>
+  <SanityImage
+    id="..."
+    baseUrl="..."
+    width={1440}
+    css={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      width: "100%",
+      height: "100%",
+      objectFit: "cover",
+      userSelect: "none",
+      zIndex: 1,
+    }}
+    alt=""
+  />
+
+  <div css={{ position: "relative", zIndex: 2 }}>
+    <h1>Your big hero copy</h1>
+    <LinkButton to="/signup/">Get started</LinkButton>
+  </div>
+</section>
+```
+
+## How It Works
+
+1. **Container positioning**: The `section` is set to `position: relative` to contain the absolutely-positioned image
+
+2. **Image positioning**: The image uses `position: absolute` with `top: 0` and `left: 0` to fill the entire section
+
+3. **Object fit**: The `objectFit: "cover"` CSS property ensures the image fills the container while maintaining aspect ratio
+
+4. **Z-index layering**: The image has `zIndex: 1` while the content has `zIndex: 2` to ensure content appears above the image
+
+5. **User interaction**: `userSelect: "none"` prevents the image from being selected when users click and drag
+
+## Using Cover Mode for Better Control
+
+If you know the approximate height of your section, you can use `mode="cover"` to prevent portrait images from being retrieved and then cropped by the browser:
+
+```jsx
+<SanityImage
+  id="..."
+  baseUrl="..."
+  width={1440}
+  height={600}
+  mode="cover"
+  css={{
+    position: "absolute",
+    top: 0,
+    left: 0,
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
+    userSelect: "none",
+    zIndex: 1,
+  }}
+  alt=""
+/>
+```
+
+<Note>
+This example uses `mode="contain"` for `SanityImage` but relies on CSS `object-fit: cover` to handle the final rendering. Using `mode="cover"` with a height value can be more efficient if you know the section height.
+</Note>
+
+## Section Sizing
+
+The `section` element is sized based on the content inside the `div`. The image will automatically fill the entire section regardless of its height. The padding (`paddingBlock: 100`) creates space around the content.
