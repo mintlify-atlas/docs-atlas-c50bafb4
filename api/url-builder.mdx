@@ -1,14 +1,14 @@
 ---
 title: URL Builder Functions
-description: API reference for URL building functions in @sanity-image/url-builder
+description: API reference for URL building functions
 ---
 
-The URL builder package provides functions to generate Sanity CDN URLs with query parameters for image transformations.
+These functions generate Sanity CDN URLs with query parameters for image transformations. They are re-exported from the main `sanity-image` package for convenience.
 
 ## Import
 
 ```tsx
-import { buildSrc, buildSrcSet, buildSvgAttributes } from '@sanity-image/url-builder'
+import { buildSrc, buildSrcSet } from 'sanity-image'
 ```
 
 ## buildSrc
@@ -138,52 +138,6 @@ const srcSet = buildSrcSet({
 ```
 
 ---
-
-## buildSvgAttributes
-
-Generates attributes for SVG images. SVGs don't support query parameters, so this returns the direct asset URL with original dimensions.
-
-### Signature
-
-```typescript
-function buildSvgAttributes(inputs: ImageSrcInputs): ComputedImageData
-```
-
-### Parameters
-
-<ParamField path="inputs" type="ImageSrcInputs" required>
-  Requires `id` and `baseUrl`. Other transformation parameters are ignored for SVG images.
-</ParamField>
-
-### Returns
-
-<ResponseField name="attributes" type="ComputedImageData">
-  Object with the SVG URL and original dimensions.
-  
-  ```typescript
-  {
-    src: string      // Direct URL to SVG (no query parameters)
-    width: number    // Original width from image ID
-    height: number   // Original height from image ID
-  }
-  ```
-</ResponseField>
-
-### Example
-
-```typescript
-const svgData = buildSvgAttributes({
-  id: 'image-abc123-800x600-svg',
-  baseUrl: 'https://cdn.sanity.io/images/project/dataset/'
-})
-
-// Returns:
-// {
-//   src: 'https://cdn.sanity.io/images/project/dataset/abc123-800x600.svg',
-//   width: 800,
-//   height: 600
-// }
-```
 
 ## Common Types
 

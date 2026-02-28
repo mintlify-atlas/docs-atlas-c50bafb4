@@ -1,14 +1,14 @@
 ---
 title: Utility Functions
-description: API reference for utility functions in @sanity-image/url-builder
+description: API reference for utility functions
 ---
 
-Utility functions for working with Sanity image IDs and asset references.
+Utility functions for working with Sanity image IDs and asset references. These are re-exported from the main `sanity-image` package.
 
 ## Import
 
 ```tsx
-import { parseImageId, assetId, normalizeAssetId } from '@sanity-image/url-builder'
+import { parseImageId, assetId, normalizeAssetId } from 'sanity-image'
 ```
 
 ## parseImageId
@@ -201,7 +201,7 @@ const normalized2 = normalizeAssetId(asset2)
 Useful when you need consistent asset objects with `_id` regardless of the source:
 
 ```typescript
-import { normalizeAssetId, parseImageId } from '@sanity-image/url-builder'
+import { normalizeAssetId, parseImageId } from 'sanity-image'
 
 // Normalize assets from various sources
 const assets = [
@@ -214,28 +214,6 @@ assets.forEach(asset => {
   const { dimensions } = parseImageId(asset._id)
   console.log(dimensions)
 })
-```
-
-## Pattern Constants
-
-### SANITY_IMAGE_ID_PATTERN
-
-Regular expression pattern for validating Sanity image IDs.
-
-```typescript
-const SANITY_IMAGE_ID_PATTERN = /^image-([\da-f]+)-(\d+x\d+)-(\w+)$/
-```
-
-#### Example
-
-```typescript
-import { SANITY_IMAGE_ID_PATTERN } from '@sanity-image/url-builder'
-
-const isValid = SANITY_IMAGE_ID_PATTERN.test('image-abc123-1920x1080-jpg')
-// true
-
-const isInvalid = SANITY_IMAGE_ID_PATTERN.test('invalid-format')
-// false
 ```
 
 ## Type Definitions
