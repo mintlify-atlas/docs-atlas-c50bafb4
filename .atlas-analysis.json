@@ -1,0 +1,65 @@
+{
+  "projectType": "sdk-library",
+  "projectName": "Sanity Image",
+  "projectDescription": "React component for displaying well-optimized images from Sanity.io easily",
+  "theme": "palm",
+  "primaryColor": "#f03e2f",
+  "lightColor": "#ff6b5e",
+  "darkColor": "#c72e1f",
+  "navigation": {
+    "groups": [
+      {
+        "group": "Get Started",
+        "pages": [
+          "introduction",
+          "installation",
+          "quickstart"
+        ]
+      },
+      {
+        "group": "Guides",
+        "pages": [
+          "guides/modes",
+          "guides/styling",
+          "guides/background-images",
+          "guides/wrapper-component",
+          "guides/groq-queries"
+        ]
+      },
+      {
+        "group": "API Reference",
+        "pages": [
+          "api/sanity-image",
+          "api/image-with-preview",
+          "api/url-builder",
+          "api/utilities"
+        ]
+      },
+      {
+        "group": "Examples",
+        "pages": [
+          "examples/basic-usage",
+          "examples/responsive-grid",
+          "examples/hero-section"
+        ]
+      }
+    ]
+  },
+  "keyFeatures": [
+    "Automatic srcSet generation with dynamic multipliers",
+    "Native lazy loading with low-quality image previews",
+    "Automatic width and height attributes to prevent layout shifts",
+    "Support for Sanity crop and hotspot data",
+    "Polymorphic component with TypeScript support",
+    "Tiny 4kb bundle size with zero dependencies"
+  ],
+  "publicApiSurface": [
+    "SanityImage - Main React component for rendering images",
+    "ImageWithPreview - Component for rendering images with preview",
+    "buildSrc - Function to build image src URL",
+    "buildSrcSet - Function to build image srcSet",
+    "parseImageId - Utility to parse Sanity image ID",
+    "assetId - Utility to get asset ID from image",
+    "normalizeAssetId - Utility to normalize asset ID format"
+  ]
+}
